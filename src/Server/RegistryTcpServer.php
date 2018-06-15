@@ -19,7 +19,10 @@ class RegistryTcpServer extends TCP
 {
     use OnWorkerStart;
 
-    protected $fd = [];
+    /**
+     * @var RegistryEntity
+     */
+    protected $entity;
 
     public function doWork(swoole_server $server, $fd, $data, $from_id)
     {
@@ -28,45 +31,27 @@ class RegistryTcpServer extends TCP
         if (!$data || !is_array($data)) {
             return 0;
         }
+
+        //生成注册数据
+        $this->entity = (new RegistryEntity($data));
+
         //检查配置是否存在
         if (!config()->has('registry_server')) {
             return 0;
         }
 
-        $entity = (new RegistryEntity($data));
-
         //注册配置
         $registry = new Registry();
-
-        $registry->register($entity);
-
-        //$this->bind($fd, $entity);
-
+        $registry->register($this->entity);
         $server->send($fd, 'ok');
     }
 
     public function doClose(swoole_server $server, $fd, $fromId)
     {
-//        $registry = new Registry();
-//
-//        $entity = $this->getBind($fd);
-//
-//        $registry->unRegister($entity);
-
         //服务断开连接，移除注册配置
+        $registry = new Registry();
+        $registry->unRegister($this->entity);
+
         print_r('服务断开' . PHP_EOL);
-    }
-
-    protected function bind($fd, RegistryEntity $entity)
-    {
-        $this->fd[$fd] = $entity;
-    }
-
-    protected function getBind($fd)
-    {
-        if (!isset($this->fd[$fd])) {
-            return false;
-        }
-        return $this->fd[$fd];
     }
 }

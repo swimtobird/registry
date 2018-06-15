@@ -28,7 +28,7 @@ class Registry implements RegistryInterface
 
         $driver = ucfirst($registry_config['driver']);
 
-        $registry_namespace = "Support\\Register\\Adapter\\{$driver}Registry";
+        $registry_namespace = "Support\\Registry\\Adapter\\{$driver}Registry";
 
         if (!class_exists($registry_namespace)) {
             return false;
@@ -39,8 +39,7 @@ class Registry implements RegistryInterface
 
     public function register(RegistryEntity $entity)
     {
-        print_r($entity);
-        //$this->registry->register($entity);
+        $this->registry->register($entity);
     }
 
     public function unRegister(RegistryEntity $entity)

@@ -205,7 +205,7 @@ class RegistryEntity
     public function toArray()
     {
         return [
-            'server' => $this->getService(),
+            'service' => $this->getService(),
             'node' => $this->getNode(),
             'pid' => $this->getPid(),
             'host' => $this->getHost(),

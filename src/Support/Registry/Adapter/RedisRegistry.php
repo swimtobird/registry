@@ -13,7 +13,10 @@ use Support\Registry\RegistryEntity;
 
 class RedisRegistry implements RegistryInterface
 {
-    protected  $redis;
+    /**
+     * @var \Redis
+     */
+    protected $redis;
 
     protected $config;
 
@@ -21,20 +24,24 @@ class RedisRegistry implements RegistryInterface
     {
         $this->redis = new \Redis();
 
-        $this->redis->connect($config['host'],$config['port']);
+        $this->redis->connect($config['host'], $config['port']);
 
-        if (isset($config['auth']) && $config['auth']){
+        if (isset($config['auth']) && $config['auth']) {
             $this->redis->auth($config['auth']);
         }
     }
 
     public function register(RegistryEntity $entity)
     {
-        print_r($entity->toArray());
+        $registry = $entity->toArray();
+
+        $this->redis->hSet("registry.{$registry['service']}", "{$registry['node']}", $entity->toJson());
     }
 
     public function unRegister(RegistryEntity $entity)
     {
-        // TODO: Implement unRegister() method.
+        $registry = $entity->toArray();
+
+        $this->redis->hDel("registry.{$registry['service']}", "{$registry['node']}");
     }
 }
