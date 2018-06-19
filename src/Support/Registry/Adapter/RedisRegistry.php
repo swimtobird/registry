@@ -20,6 +20,8 @@ class RedisRegistry implements RegistryInterface
 
     protected $config;
 
+    protected $prefix = 'fastd.registry.';
+
     public function __construct($config)
     {
         $this->redis = new \Redis();
@@ -31,17 +33,69 @@ class RedisRegistry implements RegistryInterface
         }
     }
 
+    /**
+     * @return string
+     */
+    protected function getPrefix()
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * @param RegistryEntity $entity
+     */
     public function register(RegistryEntity $entity)
     {
         $registry = $entity->toArray();
 
-        $this->redis->hSet("registry.{$registry['service']}", "{$registry['node']}", $entity->toJson());
+        $this->redis->hSet($this->getPrefix() . "{$registry['service']}", "{$registry['node']}", $entity->toJson());
     }
 
-    public function unRegister(RegistryEntity $entity)
+    /**
+     * @param RegistryEntity $entity
+     */
+    public function deRegister(RegistryEntity $entity)
     {
+        $this->list();
+
         $registry = $entity->toArray();
 
-        $this->redis->hDel("registry.{$registry['service']}", "{$registry['node']}");
+        $this->redis->hDel($this->getPrefix() . "{$registry['service']}", "{$registry['node']}");
+    }
+
+    /**
+     * @return array
+     */
+    public function list()
+    {
+        $this->redis->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
+
+        $iterator = null;
+        while ($keys = $this->redis->scan($iterator, $this->getPrefix() . '*')) {
+            foreach ($keys as $key) {
+                $services[] = str_replace($this->getPrefix(), '', $key);
+            }
+        }
+        return $services ?? [];
+    }
+
+    /**
+     * @param $service
+     * @return array
+     */
+    public function show($service)
+    {
+        $service = $this->getPrefix() . $service;
+
+        if (!$this->redis->exists($service)) {
+            return ["nodes" => []];
+        }
+
+        $nodes = $this->redis->hGetAll($service);
+
+        foreach ($nodes as $node => $data) {
+            $nodes[$node] = json_decode($data, true);
+        }
+        return ["nodes" => $nodes];
     }
 }

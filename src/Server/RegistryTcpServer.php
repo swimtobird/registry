@@ -11,7 +11,8 @@ namespace Server;
 use FastD\Servitization\OnWorkerStart;
 use FastD\Swoole\Server\TCP;
 use FastD\Packet\Json;
-use Support\Registry\Registry;
+use Runner\Validator\Exceptions\ValidationException;
+use Runner\Validator\Validator;
 use Support\Registry\RegistryEntity;
 use swoole_server;
 
@@ -32,6 +33,11 @@ class RegistryTcpServer extends TCP
             return 0;
         }
 
+        try{
+            print_r($this->validate($data));
+        }catch (ValidationException $exception){
+            $server->send($fd,"error:{$exception->getMessage()}");
+        }
         //生成注册数据
         $this->entity = (new RegistryEntity($data));
 
@@ -41,17 +47,28 @@ class RegistryTcpServer extends TCP
         }
 
         //注册配置
-        $registry = new Registry();
-        $registry->register($this->entity);
+        registry()->register($this->entity);
         $server->send($fd, 'ok');
     }
 
     public function doClose(swoole_server $server, $fd, $fromId)
     {
-        //服务断开连接，移除注册配置
-        $registry = new Registry();
-        $registry->unRegister($this->entity);
-
+        if ($this->entity){
+            //服务断开连接，移除注册配置
+            registry()->deRegister($this->entity);
+        }
         print_r('服务断开' . PHP_EOL);
+    }
+
+    protected function validate($data)
+    {
+        $rules = [
+            'service_host' => 'required|url',
+            'service_name' => 'required|string',
+            'service_pid' => 'required|int',
+        ];
+
+        $validator = new Validator($data, $rules);
+        $validator->validate();
     }
 }

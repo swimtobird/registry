@@ -37,13 +37,36 @@ class Registry implements RegistryInterface
         $this->registry = new $registry_namespace($registry_config);
     }
 
+    /**
+     * @param RegistryEntity $entity
+     */
     public function register(RegistryEntity $entity)
     {
         $this->registry->register($entity);
     }
 
-    public function unRegister(RegistryEntity $entity)
+    /**
+     * @param RegistryEntity $entity
+     */
+    public function deRegister(RegistryEntity $entity)
     {
-        $this->registry->unRegister($entity);
+        $this->registry->deRegister($entity);
+    }
+
+    /**
+     * @return array
+     */
+    public function list()
+    {
+        return $this->registry->list();
+    }
+
+    /**
+     * @param $service
+     * @return array
+     */
+    public function show($service)
+    {
+        return $this->registry->show($service);
     }
 }
