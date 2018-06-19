@@ -24,6 +24,10 @@ return [
         [
             'host' => '0.0.0.0:9998',
             'class' => \Server\RegistryTcpServer::class
+        ],
+        [
+            'host' => '0.0.0.0:9996',
+            'class' => \Server\ConsumerTcpServer::class
         ]
     ],
 ];
